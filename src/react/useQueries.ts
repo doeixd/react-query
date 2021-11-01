@@ -1,4 +1,4 @@
-import React from 'react'
+import {createSignal, createMemo, createEffect, onCleanup} from 'solid-js'
 import { QueryFunction } from '../core/types'
 
 import { notifyManager } from '../core/notifyManager'
@@ -113,8 +113,8 @@ type QueriesResults<
 export function useQueries<T extends any[]>(
   queries: readonly [...QueriesOptions<T>]
 ): QueriesResults<T> {
-  const mountedRef = React.useRef(false)
-  const [, forceUpdate] = React.useState(0)
+  const mountedRef = false
+  const [, forceUpdate] = createSignal(0)
 
   const queryClient = useQueryClient()
 
@@ -127,13 +127,13 @@ export function useQueries<T extends any[]>(
     return defaultedOptions
   })
 
-  const [observer] = React.useState(
+  const [observer] = createSignal(
     () => new QueriesObserver(queryClient, defaultedQueries)
   )
 
   const result = observer.getOptimisticResult(defaultedQueries)
 
-  React.useEffect(() => {
+  createEffect(() => {
     mountedRef.current = true
 
     const unsubscribe = observer.subscribe(
@@ -144,17 +144,19 @@ export function useQueries<T extends any[]>(
       })
     )
 
-    return () => {
+
+
+    onCleanup( () => {
       mountedRef.current = false
       unsubscribe()
-    }
-  }, [observer])
+    })
+  })
 
-  React.useEffect(() => {
+  createEffect(() => {
     // Do not notify on updates because of changes in the options because
     // these changes should already be reflected in the optimistic result.
-    observer.setQueries(defaultedQueries, { listeners: false })
-  }, [defaultedQueries, observer])
+    observer.setQueries(defaultedQueries(), { listeners: false })
+  })
 
   return result as QueriesResults<T>
 }

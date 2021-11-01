@@ -1,4 +1,5 @@
-import React from 'react'
+
+import {createSignal, createMemo, createEffect, onCleanup} from 'solid-js'
 
 import { notifyManager } from '../core/notifyManager'
 import { QueryKey } from '../core/types'
@@ -14,12 +15,12 @@ export function useIsMutating(
   arg1?: QueryKey | MutationFilters,
   arg2?: MutationFilters
 ): number {
-  const mountedRef = React.useRef(false)
+  const mountedRef = false
   const filters = parseMutationFilterArgs(arg1, arg2)
 
   const queryClient = useQueryClient()
 
-  const [isMutating, setIsMutating] = React.useState(
+  const [isMutating, setIsMutating] = createSignal(
     queryClient.isMutating(filters)
   )
 
@@ -28,7 +29,7 @@ export function useIsMutating(
   const isMutatingRef = React.useRef(isMutating)
   isMutatingRef.current = isMutating
 
-  React.useEffect(() => {
+  createEffect(() => {
     mountedRef.current = true
 
     const unsubscribe = queryClient.getMutationCache().subscribe(
@@ -42,11 +43,12 @@ export function useIsMutating(
       })
     )
 
-    return () => {
+    onCleanup(()=>{
       mountedRef.current = false
       unsubscribe()
-    }
-  }, [queryClient])
+    })
+  
+  })
 
   return isMutating
 }

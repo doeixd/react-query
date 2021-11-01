@@ -1,4 +1,5 @@
-import React from 'react'
+
+import {createSignal, createMemo, createEffect, onCleanup} from 'solid-js'
 
 import { notifyManager } from '../core/notifyManager'
 import { QueryKey } from '../core/types'
@@ -14,21 +15,21 @@ export function useIsFetching(
   arg1?: QueryKey | QueryFilters,
   arg2?: QueryFilters
 ): number {
-  const mountedRef = React.useRef(false)
+  const mountedRef = false
 
   const queryClient = useQueryClient()
 
   const [filters] = parseFilterArgs(arg1, arg2)
-  const [isFetching, setIsFetching] = React.useState(
+  const [isFetching, setIsFetching] = createSignal(
     queryClient.isFetching(filters)
   )
 
-  const filtersRef = React.useRef(filters)
+  const filtersRef = filters
   filtersRef.current = filters
-  const isFetchingRef = React.useRef(isFetching)
+  const isFetchingRef = isFetching
   isFetchingRef.current = isFetching
 
-  React.useEffect(() => {
+  createEffect(() => {
     mountedRef.current = true
 
     const unsubscribe = queryClient.getQueryCache().subscribe(
@@ -42,11 +43,12 @@ export function useIsFetching(
       })
     )
 
-    return () => {
+    onCleanup(()=>{
       mountedRef.current = false
       unsubscribe()
-    }
-  }, [queryClient])
+    })
+
+  })
 
   return isFetching
 }

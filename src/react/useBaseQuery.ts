@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { QueryKey } from '../core'
 import { notifyManager } from '../core/notifyManager'
 import { QueryObserver } from '../core/queryObserver'
@@ -7,6 +5,7 @@ import { useQueryErrorResetBoundary } from './QueryErrorResetBoundary'
 import { useQueryClient } from './QueryClientProvider'
 import { UseBaseQueryOptions } from './types'
 import { shouldThrowError } from './utils'
+import {createSignal, createMemo, createEffect, onCleanup} from 'solid-js'
 
 export function useBaseQuery<
   TQueryFnData,
@@ -24,12 +23,12 @@ export function useBaseQuery<
   >,
   Observer: typeof QueryObserver
 ) {
-  const mountedRef = React.useRef(false)
-  const [, forceUpdate] = React.useState(0)
+  const [mountedRef] = createSignal(false)
+  const [, forceUpdate] = createSignal(0)
 
   const queryClient = useQueryClient()
   const errorResetBoundary = useQueryErrorResetBoundary()
-  const defaultedOptions = queryClient.defaultQueryObserverOptions(options)
+  const [defaultedOptions] = createSignal(queryClient.defaultQueryObserverOptions(options))
 
   // Make sure results are optimistically set in fetching state before subscribing or updating options
   defaultedOptions.optimisticResults = true
@@ -74,7 +73,7 @@ export function useBaseQuery<
     }
   }
 
-  const [observer] = React.useState(
+  const [observer] = createSignal(
     () =>
       new Observer<TQueryFnData, TError, TData, TQueryData, TQueryKey>(
         queryClient,
@@ -84,7 +83,7 @@ export function useBaseQuery<
 
   let result = observer.getOptimisticResult(defaultedOptions)
 
-  React.useEffect(() => {
+  createEffect(() => {
     mountedRef.current = true
 
     errorResetBoundary.clearReset()
@@ -100,18 +99,19 @@ export function useBaseQuery<
     // Update result to make sure we did not miss any query updates
     // between creating the observer and subscribing to it.
     observer.updateResult()
-
-    return () => {
+    onCleanup(() => {
       mountedRef.current = false
       unsubscribe()
-    }
-  }, [errorResetBoundary, observer])
+    })
+  })
 
-  React.useEffect(() => {
+
+
+  createEffect(() => {
     // Do not notify on updates because of changes in the options because
     // these changes should already be reflected in the optimistic result.
-    observer.setOptions(defaultedOptions, { listeners: false })
-  }, [defaultedOptions, observer])
+    observer.setOptions(defaultedOptions(), { listeners: false })
+  })
 
   // Handle suspense
   if (defaultedOptions.suspense && result.isLoading) {

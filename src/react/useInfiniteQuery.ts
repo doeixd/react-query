@@ -4,6 +4,8 @@ import { QueryFunction, QueryKey } from '../core/types'
 import { parseQueryArgs } from '../core/utils'
 import { UseInfiniteQueryOptions, UseInfiniteQueryResult } from './types'
 import { useBaseQuery } from './useBaseQuery'
+import {createSignal, createMemo, createEffect, onCleanup} from 'solid-js'
+
 
 // HOOK
 
