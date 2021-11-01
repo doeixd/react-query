@@ -1,4 +1,4 @@
-import React from 'react'
+import {createSignal, createMemo, createEffect, onCleanup} from 'solid-js'
 
 import { notifyManager } from '../core/notifyManager'
 import { noop, parseMutationArgs } from '../core/utils'
@@ -74,13 +74,13 @@ export function useMutation<
     | UseMutationOptions<TData, TError, TVariables, TContext>,
   arg3?: UseMutationOptions<TData, TError, TVariables, TContext>
 ): UseMutationResult<TData, TError, TVariables, TContext> {
-  const mountedRef = React.useRef(false)
-  const [, forceUpdate] = React.useState(0)
+  const mountedRef = false
+  const [, forceUpdate] = createSignal(0)
 
   const options = parseMutationArgs(arg1, arg2, arg3)
   const queryClient = useQueryClient()
 
-  const obsRef = React.useRef<MutationObserver<any, any, any, any>>()
+  const obsRef = undefined
 
   if (!obsRef.current) {
     obsRef.current = new MutationObserver(queryClient, options)
@@ -90,7 +90,7 @@ export function useMutation<
 
   const currentResult = obsRef.current.getCurrentResult()
 
-  React.useEffect(() => {
+  createEffect(() => {
     mountedRef.current = true
 
     const unsubscribe = obsRef.current!.subscribe(
@@ -100,17 +100,17 @@ export function useMutation<
         }
       })
     )
-    return () => {
+
+    onCleanup(() => {
       mountedRef.current = false
       unsubscribe()
-    }
-  }, [])
+    })
+  })
 
-  const mutate = React.useCallback<
-    UseMutateFunction<TData, TError, TVariables, TContext>
-  >((variables, mutateOptions) => {
+  const mutate: UseMutateFunction<TData, TError, TVariables, TContext> = 
+    ((variables, mutateOptions) => {
     obsRef.current!.mutate(variables, mutateOptions).catch(noop)
-  }, [])
+  })
 
   if (
     currentResult.error &&

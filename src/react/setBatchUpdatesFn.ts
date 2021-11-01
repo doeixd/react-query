@@ -1,4 +1,4 @@
 import { notifyManager } from '../core'
-import { unstable_batchedUpdates } from './reactBatchedUpdates'
+import {batch} from 'solid-js'
 
-notifyManager.setBatchNotifyFunction(unstable_batchedUpdates)
+notifyManager.setBatchNotifyFunction(batch)

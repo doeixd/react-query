@@ -1,4 +1,4 @@
-import React from 'react'
+import {createContext, useContext, createMemo} from "solid-js"
 
 // CONTEXT
 
@@ -23,29 +23,29 @@ function createValue(): QueryErrorResetBoundaryValue {
   }
 }
 
-const QueryErrorResetBoundaryContext = React.createContext(createValue())
+const QueryErrorResetBoundaryContext = createContext(createValue())
 
 // HOOK
 
 export const useQueryErrorResetBoundary = () =>
-  React.useContext(QueryErrorResetBoundaryContext)
+  useContext(QueryErrorResetBoundaryContext)
 
 // COMPONENT
 
 export interface QueryErrorResetBoundaryProps {
   children:
-    | ((value: QueryErrorResetBoundaryValue) => React.ReactNode)
-    | React.ReactNode
+    | ((value: QueryErrorResetBoundaryValue) => JSX.Element)
+    | JSX.Element
 }
 
-export const QueryErrorResetBoundary: React.FC<QueryErrorResetBoundaryProps> = ({
+export const QueryErrorResetBoundary = ({
   children,
-}) => {
-  const value = React.useMemo(() => createValue(), [])
+}:QueryErrorResetBoundaryProps) => {
+  const value = createMemo(() => createValue())
   return (
-    <QueryErrorResetBoundaryContext.Provider value={value}>
+    <QueryErrorResetBoundaryContext.Provider value={value()}>
       {typeof children === 'function'
-        ? (children as Function)(value)
+        ? (children as Function)(value())
         : children}
     </QueryErrorResetBoundaryContext.Provider>
   )

@@ -1,4 +1,4 @@
-import React from 'react'
+import {createMutable, createEffect, createContext} from 'solid-js'
 
 import { QueryClient } from '../core'
 
@@ -8,8 +8,8 @@ declare global {
   }
 }
 
-const defaultContext = React.createContext<QueryClient | undefined>(undefined)
-const QueryClientSharingContext = React.createContext<boolean>(false)
+const defaultContext = createContext<QueryClient|undefined>(undefined)
+const QueryClientSharingContext = createContext<boolean>(false)
 
 // if contextSharing is on, we share the first and at least one
 // instance of the context across the window
@@ -30,12 +30,12 @@ function getQueryClientContext(contextSharing: boolean) {
 }
 
 export const useQueryClient = () => {
-  const queryClient = React.useContext(
-    getQueryClientContext(React.useContext(QueryClientSharingContext))
+  const queryClient = useContext(
+    getQueryClientContext(QueryClientSharingContext)
   )
 
   if (!queryClient) {
-    throw new Error('No QueryClient set, use QueryClientProvider to set one')
+    throw new Error('No QueryClient set')
   }
 
   return queryClient
@@ -46,23 +46,20 @@ export interface QueryClientProviderProps {
   contextSharing?: boolean
 }
 
-export const QueryClientProvider: React.FC<QueryClientProviderProps> = ({
-  client,
-  contextSharing = false,
-  children,
-}) => {
-  React.useEffect(() => {
-    client.mount()
-    return () => {
-      client.unmount()
-    }
-  }, [client])
+export const QueryClientProvider = ({props}:QueryClientProviderProps) => {
+  createEffect(() => {
+    props.client.mount()
+  })
+  
+  onCleanup(() => {
+    props.clien.unmount()
+  })
 
-  const Context = getQueryClientContext(contextSharing)
+  const Context = getQueryClientContext(props.contextSharing())
 
   return (
-    <QueryClientSharingContext.Provider value={contextSharing}>
-      <Context.Provider value={client}>{children}</Context.Provider>
+    <QueryClientSharingContext.Provider value={contextSharing()}>
+      <Context.Provider value={props.client()}>{props.children()}</Context.Provider>    
     </QueryClientSharingContext.Provider>
   )
 }
